@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * Job_DeletePurl
+ *
+ * @author Aemilius
+ */
 class Job_DeletePurl extends Job_Purl {
 
     private $_itemId;

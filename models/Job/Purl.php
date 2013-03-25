@@ -2,6 +2,11 @@
 
 require_once(dirname(__FILE__) . '/../../helpers/PurlFunctions.php');
 
+/**
+ * Job_Purl
+ *
+ * @author Aemilius
+ */
 abstract class Job_Purl extends Omeka_Job_AbstractJob {
 
     protected function _log($itemId, $operation, $isError = 0, $message = null) {

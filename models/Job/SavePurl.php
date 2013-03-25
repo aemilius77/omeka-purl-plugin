@@ -1,6 +1,12 @@
 <?php
 
-// if you want to make the job decide what to do ON EVERY SAVE, use this class
+/**
+ * Job_SavePurl
+ *
+ * if you want to let the job decide what to do ON EVERY SAVE, use this class;
+ *
+ * @author Aemilius
+ */
 class Job_SavePurl extends Job_Purl {
 
     private $_itemId;

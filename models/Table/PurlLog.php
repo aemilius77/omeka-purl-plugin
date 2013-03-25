@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Description of PurlLog
+ * Table_PurlLog
  *
  * @author Aemilius
  */

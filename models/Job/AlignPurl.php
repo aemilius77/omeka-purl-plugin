@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * Job_AlignPurl
+ *
+ * @author Aemilius
+ */
 class Job_AlignPurl extends Job_Purl {
 
     public function perform() {

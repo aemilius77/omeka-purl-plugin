@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Table_Purl - an Omeka_Db_Table type
+ * Table_Purl
  *
  * @author Aemilius
  */

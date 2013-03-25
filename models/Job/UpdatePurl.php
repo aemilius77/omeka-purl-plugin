@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * Job_UpdatePurl
+ *
+ * @author Aemilius
+ */
 class Job_UpdatePurl extends Job_Purl {
 
     private $_itemId;

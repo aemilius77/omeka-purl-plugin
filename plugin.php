@@ -1,16 +1,34 @@
 <?php
 
-define('PURL_SERVER', '');
+/**
+ * put a purl.ini file in the root dir (Purl/purl.ini)
+ *
+ * [purlz]
+ * purl_server = "http://your.purlz.server"
+ * purl_domain = "/your/domain"
+ * maintainer_id = "username"
+ * maintainer_password = "password"
+ * use_batch_xml = false
+ * [omeka]
+ * omeka_server = "http://your.omeka.server"
+ * public_item_path = "/items/show/"
+ */
 
-define('PURL_DOMAIN', '');
+$properties = parse_ini_file(dirname(__FILE__).'/purl.ini');
 
-define('MAINTAINER_ID', '');
+define('PURL_SERVER', $properties['purl_server']);
 
-define('MAINTAINER_PASSWORD', '');
+define('PURL_DOMAIN', $properties['purl_domain']);
 
-define('OMEKA_SERVER', '');
+define('MAINTAINER_ID', $properties['maintainer_id']);
 
-define('PUBLIC_ITEM_PATH', '/items/show/');
+define('MAINTAINER_PASSWORD', $properties['maintainer_password']);
+
+define('USE_BATCH_XML', $properties['use_batch_xml']);
+
+define('OMEKA_SERVER', $properties['omeka_server']);
+
+define('PUBLIC_ITEM_PATH', $properties['public_item_path']);
 
 /**
  * PurlHookPlugin
@@ -25,6 +43,13 @@ class PurlHookPlugin extends Omeka_Plugin_AbstractPlugin {
 
     protected $_hooks = array('install', 'after_save_item', 'after_delete_item');
 
+    /**
+     * hookInstall
+     *
+     * when you install the plugin, this method launches a long running job to create a purl for every already existing public item
+     *
+     * @param type $args
+     */
     public function hookInstall($args) {
 
         $db = $this->_db;
@@ -57,9 +82,16 @@ class PurlHookPlugin extends Omeka_Plugin_AbstractPlugin {
 
         $db->query($purlLogTable);
 
-        $this->_sendAlign();
+        $this->_sendAlign(); // align
     }
 
+    /**
+     * filterItemCitation
+     *
+     * @param string $citation
+     * @param type $args
+     * @return string
+     */
     public function filterItemCitation($citation, $args) {
 
         $item = $args['item'];
@@ -76,6 +108,15 @@ class PurlHookPlugin extends Omeka_Plugin_AbstractPlugin {
         return $citation;
     }
 
+    /**
+     * hookAfterSaveItem
+     *
+     * this method is called after EVERY item save (insert or update);
+     * to avoid launching a purl create/update job when unnecessary, this method contains some logic;
+     * you could launch a job on every save (delegating all logic to the job), but you'd have a great deal of running jobs;
+     *
+     * @param type $args
+     */
     public function hookAfterSaveItem($args) {
 
         // item
@@ -86,48 +127,52 @@ class PurlHookPlugin extends Omeka_Plugin_AbstractPlugin {
 
         $purlRecord = $purlTable->findOneByItemId($item->id);
 
-        // avoid launching a purl create/update job on every item save
-        // can this check (db query for pur record) slow down UI?
-
         if ($item->public) { // public item
 
-            if (empty($purlRecord)) { // no purl for existing item; create
+            if (empty($purlRecord)) { // if there isn't a purl for an existing public item
 
-                $this->_sendCreate($item->id);
+                $this->_sendCreate($item->id); // create a purl
 
-            } else { // a purl
+            } else { // if there is an associated purl
 
-                if ($purlRecord->purl_type != '302') { // update existing, non 302 purl; set type to 302
+                if ($purlRecord->purl_type != '302') { // if the purl's type is not 302
 
-                    $this->_sendUpdate($item->id, $purlRecord->id, '302');
+                    $this->_sendUpdate($item->id, $purlRecord->id, '302'); // update the purl; set the type to 302
                 }
             }
 
         } else { // non public item
 
-            if (!empty($purlRecord)) { // a purl
+            if (!empty($purlRecord)) { // there is an associated purl
 
-                if ($purlRecord->purl_type != '404') { // update existing, non 404 purl; set type to 404
+                if ($purlRecord->purl_type != '404') { // if the purl's type is not 404
 
-                    $this->_sendUpdate($item->id, $purlRecord->id, '404');
+                    $this->_sendUpdate($item->id, $purlRecord->id, '404'); // update the purl; set the type to 404
                 }
             }
         }
     }
 
+    /**
+     * hookAfterDeleteItem
+     *
+     * this method contains some logic to avoid launching a purl deletion job on every delete
+     *
+     * @param type $args
+     */
     public function hookAfterDeleteItem($args) {
 
+        // item
         $item = $args['record'];
 
+        // purl record
         $purlTable = $this->_db->getTable('Purl');
 
         $purlRecord = $purlTable->findOneByItemId($item->id);
 
-        // avoid launching a purl deletion job on every delete
+        if (!empty($purlRecord)) { // if there is an associated purl
 
-        if (!empty($purlRecord)) {
-
-            $this->_sendDelete($item->id, $purlRecord->id); // it would be better to pass complex objects..., but cannot pass...
+            $this->_sendDelete($item->id, $purlRecord->id); // delete purl
         }
     }
 
@@ -135,8 +180,6 @@ class PurlHookPlugin extends Omeka_Plugin_AbstractPlugin {
     private function _sendAlign() {
 
         $jobDispatcher = Zend_Registry::get('bootstrap')->getResource('jobs');
-
-        // think no queue is needed for this one shot op...
 
         $jobDispatcher->sendLongRunning('Job_AlignPurl');
     }
