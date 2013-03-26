@@ -1,6 +1,6 @@
 <?php
 
-require_once(dirname(__FILE__).'/../lib/guzzle.phar');
+require_once(dirname(__FILE__) . '/../lib/guzzle.phar');
 
 use Guzzle\Http\Client;
 use Guzzle\Plugin\Cookie\CookiePlugin;
@@ -26,23 +26,11 @@ function createPurl($itemId) {
 
     if (strripos((string) $statusCode, '2') !== false) {
 
-        $purlRecord = new Purl(); // new purl
+        $purlValue = PURL_SERVER . $purlId;
 
-        $purlRecord->item_id = $itemId;
+        createPurlRecord($itemId, $targetURL, $purlValue); // create purl record
 
-        $purlRecord->target_url = $targetURL;
-
-        $purlRecord->purl = PURL_SERVER . $purlId;
-
-        $purlRecord->purl_type = '302';
-
-        $purlRecord->purl_status = 1;
-
-        $purlRecord->creation_date = date('Y-m-d');
-
-        $purlRecord->save(true); // save new purl
-
-        updateItemIdentifierTexts($itemId, $purlRecord); // update identifier texts
+        updateItemIdentifierTexts($itemId, $purlValue); // update identifier texts
     }
 }
 
@@ -74,7 +62,7 @@ function updatePurl($itemId, $purlRecord, $type) {
 
         $purlRecord->purl_type = $type;
 
-        $purlRecord->save(true);
+        $purlRecord->save(true); // save purl record
     }
 }
 
@@ -94,7 +82,7 @@ function deletePurl($itemId, $purlRecord) {
 
         $purlRecord->purl_status = 0;
 
-        $purlRecord->save(true);
+        $purlRecord->save(true); // save purl record
     }
 }
 
@@ -105,7 +93,7 @@ function generatePurlId($itemId) {
     return $purlId;
 }
 
-function updateItemIdentifierTexts($itemId, $purlRecord) {
+function updateItemIdentifierTexts($itemId, $purlValue) {
 
     $dcIdentifierTexts = get_db()->getTable('ElementText')->findBy(array('record_id' => $itemId, 'element_id' => 43));
 
@@ -121,11 +109,30 @@ function updateItemIdentifierTexts($itemId, $purlRecord) {
     $elementTexts = array(
         'Dublin Core' => array(
             'Identifier' => array($firstFreeIndex =>
-                array('text' => $purlRecord->purl, 'html' => false))
+                array('text' => $purlValue, 'html' => false))
         )
     );
 
     update_item($itemId, $options, $elementTexts); // update item identifiers; this fires save again
+}
+
+function createPurlRecord($itemId, $targetURL, $purlValue) {
+
+    $purlRecord = new Purl(); // new purl
+
+    $purlRecord->item_id = $itemId;
+
+    $purlRecord->target_url = $targetURL;
+
+    $purlRecord->purl = $purlValue;
+
+    $purlRecord->purl_type = '302';
+
+    $purlRecord->purl_status = 1;
+
+    $purlRecord->creation_date = date('Y-m-d');
+
+    $purlRecord->save(true); // save new purl
 }
 
 function getAuthenticatedHttpClient() {
