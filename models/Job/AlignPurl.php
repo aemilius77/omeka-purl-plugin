@@ -18,11 +18,11 @@ class Job_AlignPurl extends Job_Purl {
 
         } else {
 
-            $this->_performProgressiveAlign();
+            $this->_performProgressiveAlignment();
         }
     }
 
-    private function _performProgressiveAlign() {
+    private function _performProgressiveAlignment() {
 
         $itemTable = $this->_db->getTable('Item');
 
