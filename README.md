@@ -40,3 +40,9 @@ for omeka > 2.0
 notes:
 
 this is the very first version of the plugin and better code and docs are coming soon.
+
+
+FUTURE STEPS
+
+- Callimachus 1.2 / 1.3
+
